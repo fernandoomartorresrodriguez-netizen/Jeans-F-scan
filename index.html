@@ -5,78 +5,283 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Jeans F Scan</title>
 
-<link rel="manifest" href="manifest.json">
+<script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
+
 body{
-font-family:Arial,sans-serif;
-background:#f4f4f4;
 margin:0;
-padding:20px;
+font-family:Arial,Helvetica,sans-serif;
+background:#f3f5f7;
 }
 
-h1{
+header{
+background:#1565c0;
+color:white;
+padding:20px;
 text-align:center;
-color:#1565c0;
+font-size:28px;
+font-weight:bold;
+}
+
+.container{
+padding:15px;
 }
 
 button{
+
 width:100%;
 padding:18px;
-margin:10px 0;
+margin:8px 0;
 font-size:20px;
 border:none;
-border-radius:15px;
+border-radius:12px;
 background:#1565c0;
 color:white;
+cursor:pointer;
+
 }
 
-button:active{
-background:#0d47a1;
+input{
+
+width:100%;
+padding:15px;
+font-size:18px;
+border-radius:10px;
+border:1px solid #ccc;
+margin:10px 0;
+
 }
 
 .card{
+
 background:white;
 padding:15px;
+margin-top:15px;
 border-radius:15px;
-margin-top:20px;
 box-shadow:0 0 10px rgba(0,0,0,.15);
+
 }
 
-.estado{
-font-size:22px;
+.ok{
+
+color:green;
 font-weight:bold;
+
 }
+
+.warn{
+
+color:orange;
+font-weight:bold;
+
+}
+
+.bad{
+
+color:red;
+font-weight:bold;
+
+}
+
+#reader{
+
+width:100%;
+margin-top:15px;
+
+}
+
 </style>
 
 </head>
 
 <body>
 
-<h1>👖 Jeans F Scan</h1>
+<header>
 
-<button>📷 Escanear código</button>
+👖 Jeans F Scan
 
-<button>🔍 Buscar pantalón</button>
+</header>
 
-<button>📦 Recibir surtido</button>
+<div class="container">
 
-<button>📋 Inventario</button>
+<button onclick="abrirScanner()">📷 Escanear código</button>
 
-<div class="card">
+<input
+id="buscar"
+placeholder="Buscar modelo, talla o código..."
+onkeyup="buscarPantalon()">
 
-<h2>Ejemplo</h2>
+<div id="reader"></div>
 
-Marca: American Eagle<br>
-Modelo: 7344<br>
-Corte: Slim<br>
-Color: Light Repair<br>
-Talla: 32/32<br><br>
-
-Cantidad:
-<span class="estado">🟡 3 piezas</span>
+<div id="resultado"></div>
 
 </div>
 
+<script>
+
+let inventario=[
+{
+marca:"American Eagle",
+modelo:"7344",
+color:"Light Repair",
+talla:"32/32",
+codigo:"123456789",
+cantidad:3
+}
+];
+
+function mostrar(){
+
+let html="";
+
+inventario.forEach(p=>{
+
+let estado="🟢";
+
+let clase="ok";
+
+if(p.cantidad<=5){
+
+estado="🟡";
+
+clase="warn";
+
+}
+
+if(p.cantidad<=1){
+
+estado="🔴";
+
+clase="bad";
+
+}
+
+html+=`
+
+<div class="card">
+
+<h2>${p.marca}</h2>
+
+Modelo: ${p.modelo}<br>
+
+Color: ${p.color}<br>
+
+Talla: ${p.talla}<br>
+
+Código: ${p.codigo}<br>
+
+Cantidad:
+<span class="${clase}">
+${estado} ${p.cantidad}
+</span>
+
+</div>
+
+`;
+
+});
+
+document.getElementById("resultado").innerHTML=html;
+
+}
+
+mostrar();
+let scannerActivo = false;
+let html5QrCode;
+
+function abrirScanner(){
+
+if(scannerActivo){
+return;
+}
+
+scannerActivo=true;
+
+document.getElementById("reader").style.display="block";
+
+html5QrCode=new Html5Qrcode("reader");
+
+Html5Qrcode.getCameras().then(devices=>{
+
+if(devices.length){
+
+html5QrCode.start(
+
+devices[0].id,
+
+{
+fps:10,
+qrbox:250
+},
+
+(codigo)=>{
+
+buscarCodigo(codigo);
+
+html5QrCode.stop();
+
+scannerActivo=false;
+
+document.getElementById("reader").innerHTML="";
+
+},
+
+()=>{}
+
+);
+
+}
+
+});
+
+}
+
+function buscarCodigo(codigo){
+
+let encontrado=inventario.find(p=>p.codigo==codigo);
+
+if(encontrado){
+
+alert(
+"👖 "+encontrado.marca+
+"\nModelo: "+encontrado.modelo+
+"\nTalla: "+encontrado.talla+
+"\nCantidad: "+encontrado.cantidad
+);
+
+}else{
+
+let marca=prompt("Marca");
+
+if(!marca)return;
+
+let modelo=prompt("Modelo");
+
+let color=prompt("Color");
+
+let talla=prompt("Talla");
+
+inventario.push({
+
+marca,
+modelo,
+color,
+talla,
+codigo,
+cantidad:1
+
+});
+
+mostrar();
+
+alert("✅ Pantalón agregado");
+
+}
+
+}
+</script>
+
 </body>
+
 </html>
